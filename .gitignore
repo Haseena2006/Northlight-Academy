@@ -1,0 +1,22 @@
+node_modules/
+dist/
+target/
+.env
+uploads/
+.idea/
+*.iml
+.vscode/
+
+# Environment and secrets
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build and test output
+coverage/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
