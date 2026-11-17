@@ -3,13 +3,13 @@
 Full-stack LMS: **React + Vite** frontend, **Spring Boot 3 / Java 17** backend, **PostgreSQL + Flyway**, JWT access tokens with rotating HttpOnly refresh cookies, and role-based access for **Student / Instructor / Admin**.
 
 > ## Verification status (read first)
-> The live Neon database is not configured in this checkout, so its Flyway history and course count have not been verified here. V3 and V4 add sample catalogue data when applied by Flyway; do not assume those migrations have run on Neon until the connected backend confirms it. The bundled SVG covers are available in the frontend public assets. No testimonials or course ratings are shown because there is no verified testimonial or rating data model; V2 demo lessons have no video URLs.
+> Neon PostgreSQL has successfully applied Flyway migrations V1 through V5. The lessons table has 184 lessons; all 184 contain non-empty Markdown reading content. Lessons are delivered as text-based readings, with lesson completion and course progress tracked by the platform; this is not a video-based learning workflow. These database facts are verified for the current Neon database. Each new developer still needs to configure their own environment and run the application locally. Deployment and production readiness have not been established here. No testimonials or course ratings are shown because there is no verified testimonial or rating data model.
 
 ## Prerequisites
 JDK 17+, Maven 3.9+, Node 18+ (20/22 fine), PostgreSQL 14+.
 
 ## 1. Database
-Configure `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` with your Neon PostgreSQL connection details. The JDBC URL must include `sslmode=require`. The backend has no localhost database fallback: it fails at startup if Neon connection settings are missing. Flyway applies the schema and catalogue migrations (`V1` through `V4`) on backend startup; existing migration history is preserved.
+Configure `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` with your Neon PostgreSQL connection details. The JDBC URL must include `sslmode=require`. The backend has no localhost database fallback: it fails at startup if Neon connection settings are missing. Flyway is enabled and applies pending migrations on backend startup. The current Neon database has V1 through V5 applied; this does not mean a new developer's database has the same migration history or data.
 
 ## 2. Configuration
 ```bash
@@ -40,16 +40,19 @@ cd frontend && npm test       # Vitest + Testing Library
 Integration tests use H2, not PostgreSQL; separately confirm the connected Neon API and Flyway history when running against the configured database.
 
 ## First-run verification checklist
-1. `mvn test` and `npm test` pass; `npm run build` succeeds.
-2. Backend starts with the configured Neon URL; log shows Flyway's applied migrations through V4; admin created.
+**Already verified for the current Neon database:** V1–V5 are applied; 184 lessons have non-empty Markdown reading content (0 are empty).
+
+**Steps for a new developer:**
+1. Configure the required environment variables and start the backend and frontend using the instructions above. Confirm the backend starts against the intended Neon database.
+2. Run `mvn test` from `backend`, `npm test` from `frontend`, and `npm run build` from `frontend` to check the local checkout.
 3. Postman: import `postman/Northlight-Academy.postman_collection.json`, set `baseUrl`, `adminEmail`, `adminPassword`; run Auth → Admin → Student → Instructor folders in order.
-4. In `psql`: `SELECT email, password_hash FROM users;` (hashes start with `$2a$`), `\d enrollments` shows the unique `(student_id, course_id)` constraint.
-5. Browser: register, enroll, complete all lessons, download the certificate, open `/verify/<code>`.
+4. In `psql`, inspect schema without displaying password hashes: `\d enrollments` should show the unique `(student_id, course_id)` constraint. Do not print or share credentials or password hashes.
+5. In the browser, register, enroll, read lessons, mark lessons complete, check course progress, and download a certificate; open `/verify/<code>` to verify it.
 
 ## Sample workflows
 **Admin:** sign in with the bootstrap account → *Instructors → Add instructor* → *Courses → Add course* (assign instructor, upload thumbnail) → *Lessons* (add ≥1) → *Publish*.
 **Instructor:** sign in → *My courses* → open a course → add/edit/reorder lessons, view *Students* progress. Courses not assigned to you return 403.
-**Student:** register → *Courses* → open course → *Enroll* → watch lessons, *Mark as completed* → after the last required lesson a certificate is issued → *Certificates → Download PDF*.
+**Student:** register → *Courses* → open course → *Enroll* → read lessons, select *Mark as complete*, and track course progress → after the last required lesson a certificate is issued → *Certificates → Download PDF*.
 
 ## Security notes
 - BCrypt (strength 12); passwords/tokens never logged or returned.
